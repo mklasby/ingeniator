@@ -225,9 +225,8 @@ if __name__ == "__main__":
     METRIC = "neg_mean_absolute_error"
     scorer = get_scorer(METRIC)
 
-    logging.basicConfig()
+    logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger(__file__)
-    logger.setLevel(logging.DEBUG)
     X, y = toy_feature_selection_dataset(
         classification_targets=False,
         num_samples=200,

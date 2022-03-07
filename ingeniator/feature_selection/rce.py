@@ -12,6 +12,7 @@ import warnings
 from sklearn.metrics import get_scorer
 import re
 
+
 class RecursiveClusterElimination(object):
 
     # TODO: Convert to internally representing data as arrays and have a separate dict
@@ -45,9 +46,7 @@ class RecursiveClusterElimination(object):
         self.extinct_features = []
         results = {"features": [], "metric": [], "num_features": []}
 
-        while (
-            True
-        ):  # We will recursively eliminate 10% of clusters until reaching min_features.
+        while True:  # We will recursively eliminate 10% of clusters until reaching min_features.
             ranks = self._get_feature_ranks(X_train, y_train, n_clusters)
             X_train = self._get_extinct_features(ranks, X_train)
             n_clusters = int(n_clusters * 0.9)
@@ -84,49 +83,30 @@ class RecursiveClusterElimination(object):
             n_clusters = X_train_val.shape[0]
         k_means = KMeans(n_clusters=n_clusters, random_state=np.random.randint(10000))
         k_means.fit(X_train_val.T)
-        clusters_df = pd.DataFrame(
-            {"feature": X_train_val.columns, "cluster": k_means.labels_}
-        )
+        clusters_df = pd.DataFrame({"feature": X_train_val.columns, "cluster": k_means.labels_})
         return clusters_df
 
     def _get_feature_ranks(self, X_train, y_train, n_clusters):
         with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", category=ConvergenceWarning, module="sklearn"
-            )
+            warnings.filterwarnings("ignore", category=ConvergenceWarning, module="sklearn")
             feature_ranks = {k: [] for k in X_train.columns}
             estimator = LinearSVC(C=0.1, random_state=self.random_state)
             self.logger.info(f"Clustering features into {n_clusters} clusters...")
             for _ in range(self.cv_iterations):
                 metrics_dict = {}
                 features_dict = {}
-                X_train_val, X_val, y_train_val, y_val = self._get_train_val_split(
-                    X_train, y_train
-                )
+                X_train_val, X_val, y_train_val, y_val = self._get_train_val_split(X_train, y_train)
                 clusters_df = self._get_clusters(X_train_val, n_clusters)
                 for cluster in clusters_df["cluster"].unique():
-                    features_dict[cluster] = (
-                        clusters_df["feature"]
-                        .loc[clusters_df["cluster"] == cluster]
-                        .values
-                    )
+                    features_dict[cluster] = clusters_df["feature"].loc[clusters_df["cluster"] == cluster].values
                     this_estimator = clone(estimator)
                     this_estimator.fit(X_train_val[features_dict[cluster]], y_train_val)
-                    metrics_dict[cluster] = self.scorer(
-                        this_estimator, X_val[features_dict[cluster]], y_val
-                    )
-                sorted_results = {
-                    k: v
-                    for k, v in sorted(
-                        metrics_dict.items(), key=lambda x: x[1], reverse=True
-                    )
-                }
+                    metrics_dict[cluster] = self.scorer(this_estimator, X_val[features_dict[cluster]], y_val)
+                sorted_results = {k: v for k, v in sorted(metrics_dict.items(), key=lambda x: x[1], reverse=True)}
                 ranked_clusters = dict(enumerate(sorted_results.keys()))
                 for cluster, features in features_dict.items():
                     for feature in features:
-                        rank = [k for k, v in ranked_clusters.items() if v == cluster][
-                            0
-                        ]
+                        rank = [k for k, v in ranked_clusters.items() if v == cluster][0]
                         feature_ranks[feature].append(rank)
                 ranks = pd.DataFrame(feature_ranks)
         return ranks
@@ -135,9 +115,7 @@ class RecursiveClusterElimination(object):
         bottom_features = (
             feature_ranks.mean(axis=0)
             .sort_values(ascending=True)
-            .iloc[
-                int(-feature_ranks.shape[1] * (self.extinction_factor)) :  # noqa E203
-            ]
+            .iloc[int(-feature_ranks.shape[1] * (self.extinction_factor)) :]  # noqa E203
             .index.to_list()
         )
         self.extinct_features += bottom_features
@@ -163,22 +141,17 @@ if __name__ == "__main__":
     from sklearn.pipeline import make_pipeline
     from sklearn.metrics import accuracy_score
     from ingeniator.utils import toy_feature_selection_dataset
-    from ingeniator.feature_selection.sklearn_transformer_wrapper import (
-        SklearnTransformerWrapper,
-    )
+    from ingeniator.feature_selection.sklearn_transformer_wrapper import SklearnTransformerWrapper
     import pickle
 
     # TODO: Move to test suite
-    logging.basicConfig()
+    logging.basicConfig(level=logging.INFO)
     X, y = toy_feature_selection_dataset(
-        classification_targets=True,
-        num_samples=1000,
-        num_features=200,
-        signal_features=10,
+        classification_targets=True, num_samples=1000, num_features=200, signal_features=10,
     )
     X_train, X_test, y_train, y_test = train_test_split(X, y)
     pipe = make_pipeline(SklearnTransformerWrapper(transformer=StandardScaler()))
-    rce = RecursiveClusterElimination(metric=accuracy_score, pipeline=pipe)
-    result = rce.rce_svc(X_train, y_train, min_features=25)
+    rce = RecursiveClusterElimination(metric="accuracy", pipeline=pipe)
+    result = rce.fit(X_train, y_train, min_features=25)
     with open("result.pkl", "wb") as handle:
         pickle.dump(result, handle)
