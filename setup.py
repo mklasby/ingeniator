@@ -19,6 +19,6 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="",
-    classifiers=["Programming Language :: Python :: 3.9"],
+    classifiers=["Programming Language :: Python :: 3.8"],
     test_suite="pytest",
 )
