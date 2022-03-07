@@ -18,8 +18,6 @@ class RecursiveClusterElimination(object):
     # TODO: Convert to internally representing data as arrays and have a separate dict
     # for columns to allow for arbitrary sklearn transformers.
 
-    # TODO: check re for neg in metric
-
     def __init__(
         self,
         metric: str,
