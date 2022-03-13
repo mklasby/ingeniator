@@ -47,11 +47,7 @@ class PipelineEvaluator(BaseEstimator):
     def get_best_pipeline(self):
         if self.pipe_dict_ is None:
             raise NotFittedError("Not fit!")
-        if re.match(r"^neg", self.metric):
-            ascending = True
-        else:
-            ascending = False
-        results = self.get_results().sort_values("Score", ascending=ascending)
+        results = self.get_results().sort_values("Score", ascending=False)
         best_pipe = results.iloc[0]["Pipeline_name"]
         return self.pipe_dict_[best_pipe]
 

@@ -3,14 +3,14 @@ import pandas as pd
 from sklearn.base import clone
 from sklearn.exceptions import ConvergenceWarning, NotFittedError
 from sklearn.model_selection import train_test_split
-from sklearn.svm import LinearSVC
+from sklearn.svm import LinearSVC, LinearSVR
 from sklearn.cluster import KMeans
 from sklearn.pipeline import Pipeline
 from typing import Optional
 import logging
 import warnings
 from sklearn.metrics import get_scorer
-import re
+
 
 class RecursiveClusterElimination(object):
 
@@ -26,6 +26,7 @@ class RecursiveClusterElimination(object):
         random_state: int = 42,
         cv_iterations: int = 20,
         extinction_factor: float = 0.1,
+        classification: bool = True,
     ):
         self.metric = metric
         self.scorer = get_scorer(metric)
@@ -35,6 +36,7 @@ class RecursiveClusterElimination(object):
         self.random_state = random_state
         self.cv_iterations = cv_iterations
         self.extinction_factor = extinction_factor
+        self.classification = classification
 
     def fit(self, X, y, min_features: int = 50):
         X = X.copy()
@@ -63,11 +65,7 @@ class RecursiveClusterElimination(object):
     def get_best_features(self):
         if self.results is None:
             raise NotFittedError("Call .fit() first!")
-        if re.search(r"^neg", self.metric):
-            ascending = True
-        else:
-            ascending = False
-        df = pd.DataFrame(self.results).sort_values("metric", ascending=ascending)
+        df = pd.DataFrame(self.results).sort_values("metric", ascending=False)
         return df.iloc[0].features
 
     def _get_train_val_split(self, X_train: pd.DataFrame, y_train: pd.DataFrame):
@@ -95,8 +93,9 @@ class RecursiveClusterElimination(object):
                 "ignore", category=ConvergenceWarning, module="sklearn"
             )
             feature_ranks = {k: [] for k in X_train.columns}
-            estimator = LinearSVC(C=0.1, random_state=self.random_state)
+            estimator = self._get_estimator()
             self.logger.info(f"Clustering features into {n_clusters} clusters...")
+            # TODO: Use multi-threading here based on n_jobs param
             for _ in range(self.cv_iterations):
                 metrics_dict = {}
                 features_dict = {}
@@ -151,34 +150,46 @@ class RecursiveClusterElimination(object):
         if self.pipeline is not None:
             X_train = self.pipeline.fit_transform(X_train)
             X_test = self.pipeline.transform(X_test)
-        estimator = LinearSVC(C=0.1, random_state=self.random_state)
+        estimator = self._get_estimator()
         estimator.fit(X_train, y_train)
         this_metric = self.scorer(estimator, X_test, y_test)
         self.logger.info(f"{self.metric} score: {this_metric}")
         return this_metric
 
+    def _get_estimator(self):
+        if self.classification:
+            return LinearSVC(C=0.1, random_state=self.random_state)
+        return LinearSVR(C=0.1, random_state=self.random_state)
+
 
 if __name__ == "__main__":
     from sklearn.preprocessing import StandardScaler
     from sklearn.pipeline import make_pipeline
-    from sklearn.metrics import accuracy_score
     from ingeniator.utils import toy_feature_selection_dataset
     from ingeniator.feature_selection.sklearn_transformer_wrapper import (
         SklearnTransformerWrapper,
     )
     import pickle
 
+    _CLASSIFICATION = True
+    if not _CLASSIFICATION:
+        metric = "neg_mean_absolute_error"
+    else:
+        metric = "accuracy"
+
     # TODO: Move to test suite
     logging.basicConfig()
     X, y = toy_feature_selection_dataset(
-        classification_targets=True,
-        num_samples=1000,
+        classification_targets=_CLASSIFICATION,
+        num_samples=100,
         num_features=200,
         signal_features=10,
     )
     X_train, X_test, y_train, y_test = train_test_split(X, y)
     pipe = make_pipeline(SklearnTransformerWrapper(transformer=StandardScaler()))
-    rce = RecursiveClusterElimination(metric=accuracy_score, pipeline=pipe)
-    result = rce.rce_svc(X_train, y_train, min_features=25)
-    with open("result.pkl", "wb") as handle:
+    rce = RecursiveClusterElimination(
+        metric=metric, pipeline=pipe, classification=_CLASSIFICATION
+    )
+    result = rce.fit(X_train, y_train, min_features=10)
+    with open("result_class.pkl", "wb") as handle:
         pickle.dump(result, handle)

@@ -6,7 +6,9 @@ Typical usage example:
     oc.fit(X_train)
     X_test = oc.transform(X_test)
 """
-from ingeniator.feature_selection.dataframe_transformer_wrapper import DataFrameTransformerWrapper
+from ingeniator.feature_selection.dataframe_transformer_wrapper import (
+    DataFrameTransformerWrapper,
+)
 import numpy as np
 import pandas as pd
 from typing import Optional, List
@@ -71,9 +73,13 @@ class OutlierClipper(DataFrameTransformerWrapper):
         """
         self.quantiles_ = {}
         self.to_clip_ = X.columns
-        self.logger.info(f"Found {len(self.to_clip_)} features to clip outliers for...")
+        self.logger.debug(
+            f"Found {len(self.to_clip_)} features to clip outliers for..."
+        )
         for feature in self.to_clip_:
-            self.quantiles_[feature] = X[feature].quantile([self.lower_limit, self.upper_limit]).values
+            self.quantiles_[feature] = (
+                X[feature].quantile([self.lower_limit, self.upper_limit]).values
+            )
 
     def _transform(self, X: pd.DataFrame, y=None, copy: bool = None):
         """Transforms X by clipping outliers based on fit dataframe.
@@ -94,12 +100,16 @@ class OutlierClipper(DataFrameTransformerWrapper):
             NotFittedError: If the transformer has not been fit.
         """
         for feature in self.to_clip_:
-            X[feature] = np.clip(X[feature], self.quantiles_[feature][0], self.quantiles_[feature][1])
+            X[feature] = np.clip(
+                X[feature], self.quantiles_[feature][0], self.quantiles_[feature][1]
+            )
         return X
+
 
 if __name__ == "__main__":
     from sklearn import datasets
-    X,y = datasets.load_iris(return_X_y=True)
+
+    X, y = datasets.load_iris(return_X_y=True)
     X = pd.DataFrame(X)
     oc = OutlierClipper()
     oc.fit(X)
