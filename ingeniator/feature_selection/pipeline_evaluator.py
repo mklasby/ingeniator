@@ -25,7 +25,7 @@ class PipelineEvaluator(BaseEstimator):
         random_state: float = 42,  # TODO: Move to constants
         include_dummy_case: bool = True,
     ):
-        self.metric = metric
+        self.metric = metric  # https://scikit-learn.org/stable/modules/model_evaluation.html
         self.pipelines = pipelines
         self.estimator = estimator
         self.scorer = get_scorer(metric)
@@ -81,9 +81,7 @@ class PipelineEvaluator(BaseEstimator):
         pipe_name = self._get_pipeline_name(pipe)
         self.logger.info(f"Evaluating {pipe_name} pipeline...")
         with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore", category=ConvergenceWarning, module="sklearn"
-            )
+            warnings.filterwarnings("ignore", category=ConvergenceWarning, module="sklearn")
             warnings.filterwarnings("ignore", category=RuntimeWarning)
             try:
                 X_train = pipe.fit_transform(X_train, y_train)
@@ -102,12 +100,7 @@ class PipelineEvaluator(BaseEstimator):
         return pipe_name
 
     def _score_pipeline(
-        self,
-        X_train: pd.DataFrame,
-        X_test: pd.DataFrame,
-        y_train: pd.DataFrame,
-        y_test: pd.DataFrame,
-        pipe_name: str,
+        self, X_train: pd.DataFrame, X_test: pd.DataFrame, y_train: pd.DataFrame, y_test: pd.DataFrame, pipe_name: str,
     ):
         estimator = clone(self.estimator)
         estimator.fit(X_train, y_train)
@@ -151,9 +144,7 @@ def clean_duplicate_step_names(steps) -> list:
 def get_pipes(scalers, filters, reducers):
     pipes = [
         Pipeline(clean_duplicate_step_names(x))
-        for x in product(
-            steps_builder(scalers), steps_builder(filters), steps_builder(reducers)
-        )
+        for x in product(steps_builder(scalers), steps_builder(filters), steps_builder(reducers))
     ]
     return pipes
 
@@ -221,14 +212,10 @@ if __name__ == "__main__":
     METRIC = "neg_mean_absolute_error"
     scorer = get_scorer(METRIC)
 
-    logging.basicConfig()
+    logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger(__file__)
-    logger.setLevel(logging.DEBUG)
     X, y = toy_feature_selection_dataset(
-        classification_targets=False,
-        num_samples=200,
-        num_features=200,
-        signal_features=10,
+        classification_targets=False, num_samples=200, num_features=200, signal_features=10,
     )
     X_train, X_test, y_train, y_test = train_test_split(X, y)
     pipes = get_default_pipelines(25)

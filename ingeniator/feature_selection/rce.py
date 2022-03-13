@@ -17,8 +17,6 @@ class RecursiveClusterElimination(object):
     # TODO: Convert to internally representing data as arrays and have a separate dict
     # for columns to allow for arbitrary sklearn transformers.
 
-    # TODO: check re for neg in metric
-
     def __init__(
         self,
         metric: str,
@@ -135,8 +133,8 @@ class RecursiveClusterElimination(object):
             feature_ranks.mean(axis=0)
             .sort_values(ascending=True)
             .iloc[
-                int(-feature_ranks.shape[1] * (self.extinction_factor)) :  # noqa E203
-            ]
+                int(-feature_ranks.shape[1] * (self.extinction_factor)) :
+            ]  # noqa E203
             .index.to_list()
         )
         self.extinct_features += bottom_features
@@ -178,7 +176,7 @@ if __name__ == "__main__":
         metric = "accuracy"
 
     # TODO: Move to test suite
-    logging.basicConfig()
+    logging.basicConfig(level=logging.INFO)
     X, y = toy_feature_selection_dataset(
         classification_targets=_CLASSIFICATION,
         num_samples=100,

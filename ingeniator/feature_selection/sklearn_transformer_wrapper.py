@@ -1,4 +1,4 @@
-"""TODO
+"""TODO: Add support for feature selectors based on attributes.
 """
 from __future__ import annotations  # noqa: E501
 from ingeniator.feature_selection.dataframe_transformer_wrapper import (

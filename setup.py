@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-with open("requirements.txt") as f:
+with open("requirements.txt", "r") as f:
     reqs = f.read()
 
 setup(
@@ -19,6 +19,6 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="",
-    classifiers=["Programming Language :: Python :: 3.9"],
+    classifiers=["Programming Language :: Python :: 3.8"],
     test_suite="pytest",
 )
