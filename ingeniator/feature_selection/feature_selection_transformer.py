@@ -5,10 +5,12 @@ from ingeniator.feature_selection.dataframe_transformer_wrapper import (
     DataFrameTransformerWrapper,
 )
 import pandas as pd
-from typing import List, Optional
+from typing import List, Optional, Union
 import numpy as np
 from sklearn.base import TransformerMixin, clone
 import logging
+from sklearn.feature_selection._base import _get_feature_importances
+from sklearn.utils.validation import check_is_fitted
 
 
 class FeatureSelectionTransformer(DataFrameTransformerWrapper):
@@ -81,3 +83,22 @@ class FeatureSelectionTransformer(DataFrameTransformerWrapper):
         columns = X.loc[:, self.fit_transformer_.get_support()].columns
         X_trans = pd.DataFrame(X_trans, columns=columns, index=X.index)
         return X_trans
+
+    def get_feature_importances(
+        self,
+        getter: Union[str, callable] = "auto",
+        transform_fuction: str = "norm",
+        norm_order: int = 1,
+    ) -> pd.DataFrame:
+        check_is_fitted(self)
+        feature_importances = _get_feature_importances(
+            self.fit_transformer_.estimator_,
+            getter=getter,
+            transform_func=transform_fuction,
+        )
+        return pd.DataFrame(
+            {
+                "Feature": self.columns_before_transform_,
+                "Importance": feature_importances,
+            }  # TODO: Consider indexing by feature?
+        )
