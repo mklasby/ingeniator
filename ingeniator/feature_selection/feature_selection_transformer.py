@@ -100,5 +100,5 @@ class FeatureSelectionTransformer(DataFrameTransformerWrapper):
             {
                 "Feature": self.columns_before_transform_,
                 "Importance": feature_importances,
-            }  # TODO: Consider indexing by feature?
-        )
+            }
+        ).set_index("Feature")

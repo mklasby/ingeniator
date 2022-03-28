@@ -127,6 +127,7 @@ class DataFrameTransformerWrapper(BaseEstimator, TransformerMixin):
         if self.keep_feature_order:
             self.original_col_order_ = X.columns
 
+        # TODO: Create helper to deal with regex + ignore features list seperately
         if self.regex_feature_selector is not None:
             self._find_regex_matches(X)
 
@@ -134,6 +135,7 @@ class DataFrameTransformerWrapper(BaseEstimator, TransformerMixin):
             X = X.copy()
             ignored_feature_list = self._get_ignored_features(X)
             X = X.drop(columns=ignored_feature_list)
+        self.columns_before_transform_ = X.columns
         return X
 
     def _find_regex_matches(self, X: pd.DataFrame) -> None:
