@@ -11,16 +11,19 @@ from sklearn.base import TransformerMixin, clone
 import logging
 from sklearn.feature_selection._base import _get_feature_importances
 from sklearn.utils.validation import check_is_fitted
+from sklearn.feature_selection import SelectFromModel
 
 
 class FeatureSelectionTransformer(DataFrameTransformerWrapper):
-    """Class to wrap any sklearn feature selection transformer that preserves column names.
+    """Class to wrap any sklearn feature selection transformer that preserves column
+    names.
 
     :param transformer: Object implementing transformermixin interface to wrap.
     :type transformer: TransformerMixin
     :param copy: If true, copy feature matrix before transforming, defaults to True
     :type copy: bool, optional
-    :param ignore_features: Features to exclude from consideration of importance, defaults to None
+    :param ignore_features: Features to exclude from consideration of importance,
+        defaults to None
     :type ignore_features: Optional[List[str]], optional
     :param column_suffix: If not None, adds suffix to transformed columns.
         Defaults to None
@@ -71,11 +74,13 @@ class FeatureSelectionTransformer(DataFrameTransformerWrapper):
     def _convert_to_dataframe(
         self, X_trans: np.ndarray, X: pd.DataFrame
     ) -> pd.DataFrame:
-        """We convert to dataframe here instead of in parent since we need to mask columns using get_support.
+        """We convert to dataframe here instead of in parent since we need to mask
+        columns using get_support.
 
         :param X_trans: Df in progress of transform.
         :type X_trans: np.ndarray
-        :param X: Original Df before being transformed (but after preparing for transform in parent!)
+        :param X: Original Df before being transformed (but after preparing for
+            transform in parent!)
         :type X: pd.DataFrame
         :return: Dataframe with column names restored.
         :rtype: pd.DataFrame
@@ -90,7 +95,15 @@ class FeatureSelectionTransformer(DataFrameTransformerWrapper):
         transform_fuction: str = "norm",
         norm_order: int = 1,
     ) -> pd.DataFrame:
+        """
+        TODO: Implement fixes for SelectKBest and RFE
+        """
         check_is_fitted(self)
+        if not isinstance(self.fit_transformer_, SelectFromModel):
+            raise NotImplementedError(
+                "Only SelectFromModel is currently supported for "
+                "get_feature_importances."
+            )
         feature_importances = _get_feature_importances(
             self.fit_transformer_.estimator_,
             getter=getter,
