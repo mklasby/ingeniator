@@ -11,7 +11,6 @@ from sklearn.base import TransformerMixin, clone
 import logging
 from sklearn.feature_selection._base import _get_feature_importances
 from sklearn.utils.validation import check_is_fitted
-from sklearn.feature_selection import SelectFromModel
 
 
 class FeatureSelectionTransformer(DataFrameTransformerWrapper):
@@ -99,16 +98,27 @@ class FeatureSelectionTransformer(DataFrameTransformerWrapper):
         TODO: Implement fixes for SelectKBest and RFE
         """
         check_is_fitted(self)
-        if not isinstance(self.fit_transformer_, SelectFromModel):
+        if type(self.fit_transformer_).__name__ not in [
+            "SelectFromModel",
+            "RFECV",
+            "RFE",
+        ]:
             raise NotImplementedError(
-                "Only SelectFromModel is currently supported for "
-                "get_feature_importances."
+                "get_feature_importances currently only supports SelectFromModel, RFE, "
+                "and RFECV."
             )
         feature_importances = _get_feature_importances(
             self.fit_transformer_.estimator_,
             getter=getter,
             transform_func=transform_fuction,
         )
+        if feature_importances.shape[0] != self.columns_before_transform_.shape[0]:
+            # Then we need to get support and broadcast feature weights
+            support = self.fit_transformer_.get_support()
+            support_importances = np.zeros(self.columns_before_transform_.shape[0])
+            for idx, importance in list(zip(np.nonzero(support), feature_importances)):
+                support_importances[idx] = importance
+            feature_importances = support_importances
         return pd.DataFrame(
             {
                 "Feature": self.columns_before_transform_,
