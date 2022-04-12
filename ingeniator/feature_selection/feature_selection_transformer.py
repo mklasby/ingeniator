@@ -61,7 +61,7 @@ class FeatureSelectionTransformer(DataFrameTransformerWrapper):
 
     def _transform(self, X: pd.DataFrame, y: None) -> pd.DataFrame:
         """Transform X using self.transformer"""
-        self.logger.info(
+        self.logger.debug(
             f"X_shape in feature_selection_transformer is: {X.shape} features..."
         )
         X_trans = self.fit_transformer_.transform(X)

@@ -7,7 +7,6 @@ from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 from sklearn.base import clone
 from sklearn.utils import resample
-from procan_connectome.config import DATA_PATH, RANDOM_STATE
 import logging
 import datetime
 from ingeniator.feature_selection.feature_selection_transformer import (
@@ -31,7 +30,7 @@ class LOOCV_Wrapper(BaseEstimator):
         pipeline: Pipeline = None,
         perform_grid_search: bool = False,
         param_grid: dict = None,
-        log_dir: str = DATA_PATH,
+        log_dir: str = None,
         log_file_name: str = None,
         copy: bool = True,
         label_col: str = None,
@@ -43,7 +42,7 @@ class LOOCV_Wrapper(BaseEstimator):
         encode_labels: bool = False,
         cv: int = None,
         save_feature_importance: bool = False,
-        random_state=RANDOM_STATE,
+        random_state=42,
     ):
 
         self.X = X
@@ -304,7 +303,7 @@ if __name__ == "__main__":
         fit_intercept=True,
         max_iter=100000000,
         tol=1e-10,
-        random_state=RANDOM_STATE,
+        random_state=42,
         class_weight="balanced",
     )
     pipe = make_pipeline(
@@ -323,7 +322,7 @@ if __name__ == "__main__":
         perform_grid_search=False,
         label_col="label",
         log_file_name=None,
-        log_dir=None,
+        log_dir="logs",
         balance_classes=False,
         scoring="f1_score",
         verbose=2,
