@@ -1,9 +1,7 @@
 """Convenience wrapper for .median() so we can add it in pipeline.
 """
 from __future__ import annotations  # noqa: E501
-from systemicmacrorisk.data_inspection.dataframe_transformer_wrapper import (
-    DataFrameTransformerWrapper,
-)
+from ingeniator.feature_selection.dataframe_transformer_wrapper import DataFrameTransformerWrapper
 import numpy as np
 import pandas as pd
 from typing import List, Optional
