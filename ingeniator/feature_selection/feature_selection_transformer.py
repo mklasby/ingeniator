@@ -95,7 +95,7 @@ class FeatureSelectionTransformer(DataFrameTransformerWrapper):
         norm_order: int = 1,
     ) -> pd.DataFrame:
         """
-        TODO: Implement fixes for SelectKBest and RFE
+        TODO: Implement fix for SelectKBest
         """
         check_is_fitted(self)
         if type(self.fit_transformer_).__name__ not in [
