@@ -10,12 +10,14 @@ from typing import Optional
 import logging
 import warnings
 from sklearn.metrics import get_scorer
+from sklearn.base import TransformerMixin
 
 
-class RecursiveClusterElimination(object):
+class RecursiveClusterElimination(TransformerMixin):
 
     # TODO: Convert to internally representing data as arrays and have a separate dict
     # for columns to allow for arbitrary sklearn transformers.
+    # TODO: Can use SelectorMixin instead and masks
 
     def __init__(
         self,
@@ -37,12 +39,13 @@ class RecursiveClusterElimination(object):
         self.classification = classification
 
     def fit(self, X, y, min_features: int = 50):
+        self._reset()
         X = X.copy()
         y = y.copy()
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
         n_clusters = X.shape[1]
         # NOTE: We set n_clusters to number of features in initial state
-        self.extinct_features = []
+        self.extinct_features_ = []
         results = {"features": [], "metric": [], "num_features": []}
 
         while (
@@ -57,13 +60,26 @@ class RecursiveClusterElimination(object):
             results["metric"].append(result)
             if X_train.shape[1] <= min_features or n_clusters == 1:
                 break
-        self.results = results
-        return results
+        self.results_ = results
+        self.selected_features_ = X_train.columns.to_list()
+        return self
+
+    def transform(self, X: pd.DataFrame, y: Optional[np.ndarray] = None):
+        X = X.copy()
+        return X[self.selected_features_]
+
+    def _reset(self) -> None:
+        if hasattr(self, "results_"):
+            del self.results_
+        if hasattr(self, "selected_features_"):
+            del self.selected_features_
+        if hasattr(self, "extinct_features_"):
+            del self.extinct_features_
 
     def get_best_features(self):
-        if self.results is None:
+        if self.results_ is None:
             raise NotFittedError("Call .fit() first!")
-        df = pd.DataFrame(self.results).sort_values("metric", ascending=False)
+        df = pd.DataFrame(self.results_).sort_values("metric", ascending=False)
         return df.iloc[0].features
 
     def _get_train_val_split(self, X_train: pd.DataFrame, y_train: pd.DataFrame):
@@ -133,18 +149,18 @@ class RecursiveClusterElimination(object):
             feature_ranks.mean(axis=0)
             .sort_values(ascending=True)
             .iloc[
-                int(-feature_ranks.shape[1] * (self.extinction_factor)) :
+                int(-feature_ranks.shape[1] * (self.extinction_factor)) :  # noqa
             ]  # noqa E203
             .index.to_list()
         )
-        self.extinct_features += bottom_features
+        self.extinct_features_ += bottom_features
         return X_train.drop(columns=bottom_features)
 
     def _test_model(self, X_train, X_test, y_train, y_test):
         self.logger.info(f"Testing model on {X_train.shape[1]} features...")
         X_train = X_train.copy()
         X_test = X_test.copy()
-        X_test = X_test.drop(columns=self.extinct_features)
+        X_test = X_test.drop(columns=self.extinct_features_)
         if self.pipeline is not None:
             X_train = self.pipeline.fit_transform(X_train)
             X_test = self.pipeline.transform(X_test)
