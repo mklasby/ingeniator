@@ -121,7 +121,7 @@ class LOOCV_Wrapper(BaseEstimator):
                 label_subset,
                 replace=True,
                 n_samples=n_samples,
-                random_state=RANDOM_STATE,
+                random_state=self.random_state,
             )
 
     def _get_balanced_train(
