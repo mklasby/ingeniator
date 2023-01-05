@@ -2,7 +2,7 @@
 **Feature selection methods**
 
 - By: Mike Lasby
-- Last Update: 2022-03-06
+- Last Update: 2023-01-05
 
 ## Installation
 ### Conda venv creation
