@@ -1,8 +1,7 @@
 numpy>=1.19.2
 ipython
-pip==20.2.4
 scikit-learn>=1.0
-setuptools==52.0.0
+setuptools>=52.0.0
 ipykernel
 pandas
 seaborn
